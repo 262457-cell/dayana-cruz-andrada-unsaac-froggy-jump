@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Froggy Trivia Hop 3D - Obstetricia</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+        }
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            z-index: 10;
+        }
+        .hud-panel {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(8px);
+            padding: 12px 24px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            pointer-events: auto;
+            border: 2px solid rgba(255,255,255,0.8);
+        }
+        .top-hud {
+            align-self: center;
+            flex-direction: column;
+            text-align: center;
+            max-width: 750px;
+            width: 100%;
+        }
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-weight: bold;
+            color: #1e293b;
+            font-size: 1.1rem;
+            margin-bottom: 6px;
+        }
+        #question-text {
+            font-size: 1.2rem;
+            color: #0f172a;
+            font-weight: 800;
+        }
+        .stat-badge {
+            background: #e2e8f0;
+            padding: 4px 12px;
+            border-radius: 8px;
+            color: #334155;
+        }
+        .hearts {
+            color: #ef4444;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+        }
+        .screen-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.78);
+            backdrop-filter: blur(12px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            pointer-events: auto;
+            transition: opacity 0.3s ease;
+        }
+        .card {
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 520px;
+            width: 90%;
+            border: 4px solid #e2e8f0;
+        }
+        .card h1 {
+            color: #0284c7;
+            font-size: 2.2rem;
+            margin-bottom: 12px;
+            font-weight: 900;
+        }
+        .motivational-quote {
+            font-style: italic;
+            color: #0369a1;
+            font-size: 1.1rem;
+            background: #f0f9ff;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid #0ea5e9;
+        }
+        .card p {
+            color: #475569;
+            font-size: 1.05rem;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+        .btn {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 14px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+            transition: all 0.2s ease;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(34, 197, 94, 0.6);
+        }
+        .hidden {
+            display: none !important;
+        }
+        .controls-hint {
+            align-self: center;
+            background: rgba(15, 23, 42, 0.85);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+    </style>
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<style id="premium-overhaul">
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+:root{--ink:#12302d;--mint:#b8f2c9;--lime:#d8ff67;--deep:#062e35;--glass:rgba(8,35,42,.78);--line:rgba(255,255,255,.18)}
+*{font-family:'DM Sans',sans-serif;box-sizing:border-box}
+body,html{background:#082f35;color:#fff}
+#canvas-container:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(3,28,35,.38) 0%,transparent 30%,transparent 68%,rgba(3,28,35,.28) 100%)}
+#ui-layer{padding:clamp(12px,2.4vw,28px);gap:14px;justify-content:space-between}
+.hud-panel{color:#fff;background:linear-gradient(135deg,rgba(8,42,48,.88),rgba(7,65,63,.72));border:1px solid rgba(211,255,229,.25);backdrop-filter:blur(18px);box-shadow:0 14px 44px rgba(0,0,0,.22),inset 0 1px rgba(255,255,255,.12);border-radius:22px}
+.top-hud{max-width:920px;padding:16px 22px 18px;gap:12px}
+.stats-container{gap:10px;align-items:center;margin:0;flex-wrap:wrap}
+.stat-badge{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.12);color:#e9fff2;padding:8px 13px;border-radius:12px;font-size:.86rem;letter-spacing:.02em}
+#question-text{font-family:'Outfit',sans-serif;font-size:clamp(1.05rem,2.1vw,1.55rem);line-height:1.28;color:#fff;font-weight:700;max-width:760px;text-wrap:balance}
+.hearts{font-size:1rem;letter-spacing:1px}
+.controls-hint{align-self:center;background:rgba(5,35,39,.8);border:1px solid rgba(215,255,225,.22);color:#eaffef;padding:10px 17px;border-radius:999px;font-size:.82rem;box-shadow:0 10px 30px #001a1d44;backdrop-filter:blur(12px)}
+.screen-overlay{background:radial-gradient(ellipse at 50% 35%,rgba(14,105,88,.5),rgba(3,23,31,.92) 70%);backdrop-filter:blur(10px);padding:18px;overflow:auto}
+.card{position:relative;overflow:hidden;background:linear-gradient(145deg,#f7fff7,#e5f8ed);color:var(--ink);padding:clamp(24px,4vw,42px);border:1px solid rgba(255,255,255,.8);border-radius:28px;max-width:560px;box-shadow:0 32px 100px rgba(0,0,0,.38);text-align:left}
+.card:before{content:"";position:absolute;left:0;top:0;right:0;height:7px;background:linear-gradient(90deg,#7ee8a3,#d8ff67,#27b7a0)}
+.card h1{font-family:'Outfit',sans-serif;font-size:clamp(1.8rem,4vw,2.65rem);line-height:1.02;letter-spacing:-.04em;color:#0d5349;margin:4px 0 16px;font-weight:900}
+.card p{color:#46645c;font-size:1rem;line-height:1.65;margin-bottom:20px}
+.motivational-quote{font-size:.98rem;color:#155c4d;background:#dff8e8;border:1px solid #c6f0d5;border-left:4px solid #37b875;padding:13px 15px;border-radius:13px;margin-bottom:18px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;background:linear-gradient(135deg,#caff62,#8ee66e 55%,#54d6a0);color:#113b30;border:0;padding:15px 22px;border-radius:15px;font-family:'Outfit',sans-serif;font-size:1rem;font-weight:800;letter-spacing:.01em;cursor:pointer;box-shadow:0 8px 0 #2b986d,0 14px 26px rgba(35,160,105,.22);transition:transform .18s,filter .18s,box-shadow .18s}
+.btn:hover{transform:translateY(-2px);filter:saturate(1.12);box-shadow:0 10px 0 #2b986d,0 18px 30px rgba(35,160,105,.28)}
+.btn:active{transform:translateY(5px);box-shadow:0 3px 0 #2b986d}
+.hidden{display:none!important}
+#touch-controls{position:absolute;bottom:72px;left:50%;transform:translateX(-50%);display:none;gap:10px;z-index:12;pointer-events:auto}
+.touch-btn{width:52px;height:52px;border-radius:17px;border:1px solid #ffffff50;background:#083b3bc9;color:#effff3;font-size:1.25rem;font-weight:900;box-shadow:0 8px 20px #001c1c55;backdrop-filter:blur(12px);touch-action:manipulation}
+.touch-btn.jump{background:linear-gradient(135deg,#d8ff67,#6ee7a5);color:#104337;width:64px}
+#game-toast{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.85);opacity:0;z-index:15;pointer-events:none;padding:13px 22px;border-radius:16px;background:#073c39e8;color:#eaffef;font-family:'Outfit',sans-serif;font-size:1.25rem;font-weight:900;border:1px solid #c9ff8c88;box-shadow:0 16px 50px #001c1c55;transition:.22s}
+#game-toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+@media(max-width:650px){#ui-layer{padding:10px}.top-hud{padding:12px;gap:10px}.stats-container{justify-content:center}.stat-badge{font-size:.72rem;padding:7px 9px}.controls-hint{font-size:.72rem;padding:8px 12px;max-width:94vw}#touch-controls{display:flex;bottom:58px}.card{width:min(100%,520px)}}
+</style>
+
+</head>
+<body>
+
+    <div id="canvas-container"></div><div id="game-toast" role="status" aria-live="polite"></div>
+
+    <div id="ui-layer">
+        <div class="hud-panel top-hud">
+            <div class="stats-container">
+                <span class="stat-badge">Nivel: <span id="level-val">1</span>/6</span>
+                <span class="stat-badge">Puntuación: <span id="score-val">0</span> pts</span>
+                <span class="stat-badge">Vidas: <span id="lives-val" class="hearts">❤️❤️❤️</span></span>
+            </div>
+            <div id="question-text">Cargando pregunta...</div>
+        </div>
+        <div id="touch-controls" aria-label="Controles táctiles"><button class="touch-btn" id="left-touch" aria-label="Mover a la izquierda">←</button><button class="touch-btn jump" id="jump-touch" aria-label="Saltar">↑</button><button class="touch-btn" id="right-touch" aria-label="Mover a la derecha">→</button></div>
+        <div class="controls-hint">
+            Usa <b>← →</b> o <b>A / D</b> para moverte | Presiona <b>Flecha Arriba (↑)</b> o <b>Espacio</b> para saltar.
+        </div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="screen-overlay">
+        <div class="card">
+            <div style="font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;font-weight:800;color:#378e72;margin-bottom:10px">BIOQUEST · OBSTETRICIA</div><h1>Froggy<br>Trivia Hop <span style="color:#42b985">3D</span> 🐸</h1>
+            <div class="motivational-quote">"Cada pequeño salto te acerca más a la cima del conocimiento en obstetricia."</div>
+            <p>Salta entre nenúfares, domina el reto y demuestra cuánto sabes de <b>Obstetricia, embarazo, APN y anatomía</b>.<br><br><b>6 mundos · 60 preguntas · 3 vidas.</b> Cada respuesta correcta suma 5 puntos. ¡No caigas al agua!</p>
+            <button class="btn" onclick="startGame()">¡Comenzar Aventura!</button>
+        </div>
+    </div>
+
+    <!-- Level Complete Modal -->
+    <div id="level-screen" class="screen-overlay hidden">
+        <div class="card">
+            <h1 id="level-title">¡Nivel Superado!</h1>
+            <p id="level-msg">¡Buen comienzo!</p>
+            <button class="btn" onclick="nextLevel()">Siguiente Nivel</button>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameover-screen" class="screen-overlay hidden">
+        <div class="card">
+            <h1>¡Juego Terminado!</h1>
+            <p>Te quedaste sin vidas tras darte varios chapuzones. ¡Inténtalo de nuevo!</p>
+            <p style="font-size: 1.3rem; font-weight: bold; color: #1e293b; margin-top: -10px; margin-bottom: 20px;">Puntuación Final: <span id="final-score">0</span> pts</p>
+            <button class="btn" onclick="restartGame()">Jugar de Nuevo</button>
+        </div>
+    </div>
+
+    <!-- Victory Screen -->
+    <div id="victory-screen" class="screen-overlay hidden">
+        <div class="card">
+            <h1>🏆 ¡Felicidades!</h1>
+            <p>¡Te convertiste en la reina del estanque! 🐸🪷</p>
+            <p style="font-size: 1.3rem; font-weight: bold; color: #1e293b; margin-top: -10px; margin-bottom: 20px;">Puntuación Total: <span id="victory-score">0</span> pts</p>
+            <button class="btn" onclick="restartGame()">Jugar Otra Vez</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 60 PREGUNTAS DISTRIBUIDAS EN 6 NIVELES ---
+        const levelsData = [
+            {
+                name: "Nivel 1 — Primeros saltitos",
+                msg: "¡Buen comienzo!",
+                questions: [
+                    { q: "¿Qué es la Obstetricia?", options: ["Ciencia que estudia\nel embarazo, parto y puerperio", "Estudio exclusivo\ndel neonato"], correct: 0 },
+                    { q: "¿Qué profesional atiende el embarazo y parto dentro de sus competencias?", options: ["El obstetra", "El cirujano\ngeneral"], correct: 0 },
+                    { q: "¿Cuándo se creó el Colegio de Obstetrices del Perú?", options: ["1975", "1981"], correct: 0 },
+                    { q: "¿Qué norma creó el Colegio de Obstetrices del Perú?", options: ["Decreto Ley\nN.° 21210", "Ley N.° 23346"], correct: 0 },
+                    { q: "¿Cuándo se reconoció la Obstetricia como profesión médica en el Perú?", options: ["1981", "1975"], correct: 0 },
+                    { q: "¿Qué ley reconoció a la Obstetricia como profesión médica?", options: ["Ley N.° 23346", "Decreto Ley 21210"], correct: 0 },
+                    { q: "¿Cuándo se promulgó la Ley de Trabajo de la Obstetriz?", options: ["2002", "1981"], correct: 0 },
+                    { q: "¿Qué ley regula el trabajo del profesional obstetra?", options: ["Ley N.° 27853", "Ley N.° 23346"], correct: 0 },
+                    { q: "¿Cómo se llama actualmente el colegio profesional?", options: ["Colegio de\nObstetras del Perú", "Colegio de\nObstetrices"], correct: 0 },
+                    { q: "¿En qué año se creó el Himno del Colegio de Obstetras del Perú?", options: ["2005", "2002"], correct: 0 }
+                ]
+            },
+            {
+                name: "Nivel 2 — Aventura en el estanque",
+                msg: "¡La ranita está aprendiendo!",
+                questions: [
+                    { q: "¿Qué resolución estableció originalmente el Himno del Colegio?", options: ["Resolución N.°\n017-2005-CN-COP", "Resolución N.°\n100-2017", "Resolución N.°\n050-2002"], correct: 0 },
+                    { q: "¿En qué año se creó una nueva estrofa del Himno?", options: ["2017", "2005", "2002"], correct: 0 },
+                    { q: "¿Quién fue Madame du Coudray?", options: ["Partera francesa\ndel siglo XVIII", "Médica obstetra\nperuana", "Científica de\nla genética"], correct: 0 },
+                    { q: "¿En qué país destacó Madame du Coudray?", options: ["Francia", "Inglaterra", "España"], correct: 0 },
+                    { q: "¿Cuánto dura aproximadamente un embarazo?", options: ["40 semanas", "36 semanas", "42 semanas"], correct: 0 },
+                    { q: "¿Dónde se implanta normalmente el blastocisto?", options: ["Endometrio uterino", "Trompa de Falopio", "Ovario derecho"], correct: 0 },
+                    { q: "¿Qué órgano nutre al feto durante el embarazo?", options: ["Placenta", "Cordón umbilical", "Saco vitelino"], correct: 0 },
+                    { q: "¿Cuál es la función principal de la placenta?", options: ["Intercambio\nmaterno-fetal", "Producción de\nleche materna", "Protección\nósea fetal"], correct: 0 },
+                    { q: "¿Cuál es la presentación fetal más frecuente?", options: ["Cefálica", "Podálica", "Transversa"], correct: 0 },
+                    { q: "¿Qué hormona detectan las pruebas de embarazo?", options: ["hCG (Gonadotropina\ncoriónica humana)", "Progesterona\nsistémica", "Oxitocina\npura"], correct: 0 }
+                ]
+            },
+            {
+                name: "Nivel 3 — El jardín de lotos",
+                msg: "¡Excelente salto!",
+                questions: [
+                    { q: "¿Qué significa FUM?", options: ["Fecha de última\nmenstruación", "Frecuencia\nuterina materna", "Formación uterina\nmedida"], correct: 0 },
+                    { q: "¿Qué significa FPP?", options: ["Fecha probable\nde parto", "Feto por\nparto", "Flujo placentario\nprimario"], correct: 0 },
+                    { q: "¿Qué significa EG?", options: ["Edad gestacional", "Embarazo\ngenerado", "Examen\nginecológico"], correct: 0 },
+                    { q: "¿Qué vitamina ayuda a prevenir defectos del tubo neural?", options: ["Ácido fólico", "Vitamina C", "Vitamina D3"], correct: 0 },
+                    { q: "¿Qué mineral se suplementa para prevenir la anemia?", options: ["Hierro", "Calcio", "Magnesio"], correct: 0 },
+                    { q: "¿Cuándo debe iniciarse el control prenatal?", options: ["Lo antes posible", "En el tercer\ntrimestre", "A las 28 semanas"], correct: 0 },
+                    { q: "¿Cuántas atenciones prenatales como mínimo recomienda el MINSA?", options: ["6 atenciones", "4 atenciones", "8 atenciones"], correct: 0 },
+                    { q: "¿Antes de qué semana debe realizarse el primer control prenatal?", options: ["Antes de\nlas 14 semanas", "Antes de\nlas 20 semanas", "Antes de\nlas 10 semanas"], correct: 0 },
+                    { q: "¿Cada cuánto se realizan los controles al inicio del embarazo?", options: ["Cada 4 semanas", "Cada 2 semanas", "Cada mes y medio"], correct: 0 },
+                    { q: "¿Desde qué semana pueden realizarse controles semanales?", options: ["Desde la\nsemana 36", "Desde la\nsem 32", "Desde la\nsem 40"], correct: 0 }
+                ]
+            },
+            {
+                name: "Nivel 4 — El estanque mágico",
+                msg: "¡Ya eres experta!",
+                questions: [
+                    { q: "¿Qué se controla principalmente durante la atención prenatal?", options: ["Madre y feto", "Solo la madre", "Solo el peso\nfetal", "Presión arterial"], correct: 0 },
+                    { q: "¿Qué signo vital es fundamental controlar en la gestante?", options: ["Presión arterial", "Temperatura\ncorporal", "Frecuencia\nrespiratoria", "Pulso fetal"], correct: 0 },
+                    { q: "¿Qué enfermedad se relaciona con hipertensión y proteinuria?", options: ["Preeclampsia", "Diabetes\ngestacional", "Placenta previa", "Eclampsia leve"], correct: 0 },
+                    { q: "¿Para qué sirven los controles prenatales?", options: ["Detectar\ncomplicaciones", "Acelerar\nel parto", "Inducir\nla lactancia", "Nutrición fetal"], correct: 0 },
+                    { q: "¿Cuál es la primera etapa del trabajo de parto?", options: ["Dilatación", "Expulsión", "Alumbramiento", "Monitoreo"], correct: 0 },
+                    { q: "¿Qué instrumento registra la evolución del trabajo de parto?", options: ["Partograma", "Ecógrafo\ndigital", "Monitor fetal\ncardíaco", "Estetoscopio"], correct: 0 },
+                    { q: "¿Qué maniobras evalúan la situación y presentación fetal?", options: ["Maniobras\nde Leopold", "Maniobras\nde Credé", "Maniobras\nde Valsalva", "Maniobras físicas"], correct: 0 },
+                    { q: "¿Cuál es el orden de las maniobras de Leopold?", options: ["Situación, posición,\npresentación y encajamiento", "Presentación, posición,\nsituación y altura", "Encajamiento, posición,\nsituación y feto", "Orden aleatorio"], correct: 0 },
+                    { q: "¿Qué es el puerperio?", options: ["Periodo posterior\nal parto", "Etapa previa\nal embarazo", "Fase inicial\nde dilatación", "Maduración"], correct: 0 },
+                    { q: "¿Qué significa RN?", options: ["Recién nacido", "Respiración\nneonatal", "Ritmo normal", "Reflejo natural"], correct: 0 }
+                ]
+            },
+            {
+                name: "Nivel 5 — La gran aventura",
+                msg: "¡Maravilloso avance hacia el loto dorado!",
+                questions: [
+                    { q: "¿Qué es la lactancia materna exclusiva?", options: ["Solo leche materna", "Leche más agua", "Leche más fórmula", "Lactancia mixta"], correct: 0 },
+                    { q: "¿Cuánto dura la lactancia materna exclusiva recomendada?", options: ["6 meses", "3 meses", "1 año", "9 meses"], correct: 0 },
+                    { q: "¿Qué estudia la anatomía?", options: ["La estructura\ndel cuerpo", "El funcionamiento\ndel cuerpo", "Las patologías", "La célula viva"], correct: 0 },
+                    { q: "¿Qué estudia la fisiología?", options: ["El funcionamiento\ndel cuerpo", "La estructura\ncelular", "La anatomía\ngeneral", "Los tejidos"], correct: 0 },
+                    { q: "¿Cuál es el órgano reproductor femenino donde se desarrolla el embarazo?", options: ["Útero", "Ovario", "Vagina", "Trompa"], correct: 0 },
+                    { q: "¿Dónde ocurre normalmente la fecundación?", options: ["Trompa uterina\n(trompa de Falopio)", "Cavidad\nendometrial", "Cuello uterino", "Ovario"], correct: 0 },
+                    { q: "¿Qué gameto aporta la mujer?", options: ["Óvulo", "Espermatozoide", "Cigoto", "Embrión"], correct: 0 },
+                    { q: "¿Qué gameto aporta el varón?", options: ["Espermatozoide", "Óvulo", "Próstata", "Célula madre"], correct: 0 },
+                    { q: "¿Cómo se llama la unión del óvulo y espermatozoide?", options: ["Fecundación", "Ovulación", "Implantación", "Mitosis"], correct: 0 },
+                    { q: "¿Cómo se llama la primera célula formada después de la fecundación?", options: ["Cigoto", "Blastocisto", "Mórula", "Gástrula"], correct: 0 }
+                ]
+            },
+            {
+                name: "Nivel 6 — La reina del estanque",
+                msg: "¡Desafío final superado con éxito!",
+                questions: [
+                    { q: "¿Qué estructura se implanta en el endometrio?", options: ["Blastocisto", "Cigoto simple", "Óvulo maduro", "Mórula temprana", "Feto activo"], correct: 0 },
+                    { q: "¿Qué hormona mantiene inicialmente el embarazo?", options: ["Progesterona", "Estrógeno libre", "Prolactina alta", "Oxitocina", "Insulina"], correct: 0 },
+                    { q: "¿Qué hormona desencadena principalmente la ovulación?", options: ["LH (Luteinizante)", "FSH (Folículo)", "Oxitocina", "Progesterona", "Prolactina"], correct: 0 },
+                    { q: "¿Qué hormona estimula el crecimiento folicular?", options: ["FSH", "LH", "Progesterona", "Estrógeno", "HCG"], correct: 0 },
+                    { q: "¿Qué hormona estimula las contracciones uterinas?", options: ["Oxitocina", "Prolactina", "Insulina", "Cortisol", "Tiroxina"], correct: 0 },
+                    { q: "¿Qué hormona estimula la producción de leche?", options: ["Prolactina", "Oxitocina", "Estrógeno", "Progesterona", "Andrógeno"], correct: 0 },
+                    { q: "¿Qué significa APN?", options: ["Atención prenatal", "Acción placentaria\nnormal", "Altura pelviana\nneonatal", "Análisis postnatal", "Asistencia percutánea"], correct: 0 },
+                    { q: "¿Qué significa MAC?", options: ["Método\nanticonceptivo", "Madre con\ncontrol", "Maternidad activa\ncompleta", "Monitoreo avanzado", "Medicina clínica"], correct: 0 },
+                    { q: "¿Qué significa ITS?", options: ["Infección de\ntransmisión sexual", "Inmunidad total\nsistémica", "Inflamación del\ntracto superior", "Índice de salud", "Infección tisular"], correct: 0 },
+                    { q: "¿Qué significa VIH?", options: ["Virus de la\ninmunodeficiencia humana", "Vía inmunológica\nhumana", "Vacuna infecciosa\nhepática", "Virus inmune", "Vaso hepático"], correct: 0 }
+                ]
+            }
+        ];
+
+        let currentLevelIndex = 0;
+        let currentQInLevel = 0;
+        let score = 0;
+        let lives = 3;
+        let gameActive = false;
+
+        // --- THREE.JS SETUP ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x75c9c4);
+        scene.fog = new THREE.Fog(0x75c9c4, 24, 78);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 12.5, 17.5);
+        camera.lookAt(0, 0, -2.5);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.12;
+        container.appendChild(renderer.domElement);
+
+        const ambientLight = new THREE.HemisphereLight(0xd8fff4, 0x236c55, 1.05);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
+        dirLight.position.set(-8, 18, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.set(1024, 1024);
+        scene.add(dirLight);
+
+        // --- AGUA CON MOVIMIENTO REALISTA ---
+        const waterGeometry = new THREE.PlaneGeometry(120, 120, 50, 50);
+        const waterMaterial = new THREE.MeshStandardMaterial({
+            color: 0x2db8b0,
+            roughness: 0.22,
+            metalness: 0.18,
+            transparent: true,
+            opacity: 0.98
+        });
+        const water = new THREE.Mesh(waterGeometry, waterMaterial);
+        water.rotation.x = -Math.PI / 2;
+        water.position.y = -0.2;
+        scene.add(water);
+        // Orillas suaves, islotes y pequeñas flores para dar profundidad al estanque.
+        const shoreMat = new THREE.MeshStandardMaterial({color:0x317d61, roughness:0.92});
+        for(let side of [-1,1]){
+            const shore = new THREE.Mesh(new THREE.CylinderGeometry(7.5,8.2,0.7,48),shoreMat);
+            shore.scale.set(1.0,1,1.4); shore.position.set(side*15,-0.05,-8); scene.add(shore);
+        }
+        const pebbleMat = new THREE.MeshStandardMaterial({color:0xd7f1c4,roughness:0.9});
+        const flowerColors=[0xffc5e1,0xfff0a6,0xf5fbff];
+        for(let i=0;i<48;i++){
+            const x=(Math.random()-.5)*42, z=-Math.random()*44+3;
+            if(Math.abs(x)<5 && z> -12) continue;
+            const pebble=new THREE.Mesh(new THREE.SphereGeometry(.09+Math.random()*.11,8,7),pebbleMat);
+            pebble.position.set(x,-.02,z); pebble.scale.y=.45; scene.add(pebble);
+            if(i%4===0){
+                const bloom=new THREE.Mesh(new THREE.SphereGeometry(.12,10,8),new THREE.MeshStandardMaterial({color:flowerColors[i%flowerColors.length],emissive:flowerColors[i%flowerColors.length],emissiveIntensity:.08}));
+                bloom.position.set(x,.1,z); scene.add(bloom);
+            }
+        }
+        // Brillos flotantes sutiles.
+        const sparkleMat=new THREE.MeshBasicMaterial({color:0xe0fff3,transparent:true,opacity:.55});
+        for(let i=0;i<35;i++){
+            const sparkle=new THREE.Mesh(new THREE.SphereGeometry(.035,6,6),sparkleMat);
+            sparkle.position.set((Math.random()-.5)*34,.15+Math.random()*.5,-Math.random()*38);
+            scene.add(sparkle);
+        }
+
+        // --- RANITA REALISTA ---
+        const frogGroup = new THREE.Group();
+        
+        const frogBodyGeo = new THREE.SphereGeometry(0.6, 32, 32);
+        frogBodyGeo.scale(1, 0.7, 1.2);
+        const frogMat = new THREE.MeshStandardMaterial({ color: 0x2e7d32, roughness: 0.3 });
+        const frogBody = new THREE.Mesh(frogBodyGeo, frogMat);
+        frogBody.position.y = 0.4;
+        frogBody.castShadow = true;
+        frogBody.receiveShadow = true;
+        frogGroup.add(frogBody);
+
+        const belly = new THREE.Mesh(new THREE.SphereGeometry(0.43, 24, 20), new THREE.MeshStandardMaterial({color:0xb9f27c, roughness:0.55}));
+        belly.scale.set(1,0.62,0.92); belly.position.set(0,0.28,-0.02); frogGroup.add(belly);
+
+        const eyeGeo = new THREE.SphereGeometry(0.2, 16, 16);
+        const eyeMat = new THREE.MeshStandardMaterial({ color: 0x62c94c, roughness: 0.22 });
+        const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+        leftEye.position.set(-0.35, 0.75, -0.4);
+        const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
+        rightEye.position.set(0.35, 0.75, -0.4);
+        frogGroup.add(leftEye, rightEye);
+        const pupilGeo = new THREE.SphereGeometry(0.105, 16, 16);
+        const pupilMat = new THREE.MeshStandardMaterial({color:0x102b27, roughness:0.15});
+        const shineMat = new THREE.MeshBasicMaterial({color:0xffffff});
+        [-0.35,0.35].forEach(x=>{
+            const pupil = new THREE.Mesh(pupilGeo,pupilMat); pupil.position.set(x,0.78,-0.575); frogGroup.add(pupil);
+            const shine = new THREE.Mesh(new THREE.SphereGeometry(0.035,10,10),shineMat); shine.position.set(x-0.03,0.82,-0.66); frogGroup.add(shine);
+        });
+        const smile = new THREE.Mesh(new THREE.TorusGeometry(0.19,0.025,8,24,Math.PI), new THREE.MeshStandardMaterial({color:0x173d2d}));
+        smile.position.set(0,0.36,-0.62); smile.rotation.z=Math.PI; frogGroup.add(smile);
+
+        const legGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.8);
+        const leftLeg = new THREE.Mesh(legGeo, frogMat);
+        leftLeg.rotation.z = Math.PI / 4;
+        leftLeg.position.set(-0.5, 0.3, 0.4);
+        const rightLeg = new THREE.Mesh(legGeo, frogMat);
+        rightLeg.rotation.z = -Math.PI / 4;
+        rightLeg.position.set(0.5, 0.3, 0.4);
+        frogGroup.add(leftLeg, rightLeg);
+
+        frogGroup.position.set(0, 0, 4);
+        scene.add(frogGroup);
+
+        // --- HOJAS DE LOTO GIGANTES Y AMPLIAMENTE EXTENDIDAS A LOS EXTREMOS ---
+        let lilyPads = [];
+        let currentQuestion = null;
+        let selectedLane = 1; 
+        
+        const laneSpans = {
+            2: [-4.8, 4.8],
+            3: [-7.0, 0, 7.0],
+            4: [-9.2, -3.1, 3.1, 9.2],
+            5: [-10.8, -5.4, 0, 5.4, 10.8]
+        };
+
+        function createLilyPadMesh(isGolden = false) {
+            const padGroup = new THREE.Group();
+            const padGeo = new THREE.CircleGeometry(1.72, 64, 0.18, Math.PI*2-0.36);
+            const padMat = new THREE.MeshStandardMaterial({
+                color: isGolden ? 0xf6d65d : 0x55c878,
+                roughness: 0.42, metalness: isGolden ? 0.28 : 0.02, side:THREE.DoubleSide
+            });
+            const padMesh = new THREE.Mesh(padGeo, padMat);
+            padMesh.rotation.x=-Math.PI/2; padMesh.position.y=0.08; padMesh.castShadow=true; padMesh.receiveShadow=true;
+            padGroup.add(padMesh);
+            const rim = new THREE.Mesh(new THREE.TorusGeometry(1.68,0.055,8,64),new THREE.MeshStandardMaterial({color:isGolden?0xffef9b:0x9af29a,roughness:0.4}));
+            rim.rotation.x=Math.PI/2; rim.position.y=0.1; padGroup.add(rim);
+            const veinMat = new THREE.MeshStandardMaterial({color:isGolden?0xfff0b0:0x2c9e61,roughness:0.6});
+            for(let v=-2;v<=2;v++){
+                const vein = new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.022,1.18,6),veinMat);
+                vein.rotation.z=Math.PI/2; vein.rotation.y=v*0.14; vein.position.set(0,0.105,v*0.24); padGroup.add(vein);
+            }
+            if(isGolden){
+                const flower = new THREE.Group();
+                for(let j=0;j<7;j++){const petal=new THREE.Mesh(new THREE.SphereGeometry(0.18,12,10),new THREE.MeshStandardMaterial({color:j%2?0xfff6bb:0xffdc70,roughness:0.35}));petal.scale.set(.7,.35,1.35);petal.position.set(Math.cos(j*Math.PI*2/7)*.34,.25,Math.sin(j*Math.PI*2/7)*.34);petal.rotation.y=-j*Math.PI*2/7;flower.add(petal);}
+                const center=new THREE.Mesh(new THREE.SphereGeometry(.15,14,12),new THREE.MeshStandardMaterial({color:0xff9f43}));center.position.y=.29;flower.add(center);padGroup.add(flower);
+            }
+            return padGroup;
+        }
+
+        function setupLevel() {
+            lilyPads.forEach(p => scene.remove(p.mesh));
+            lilyPads = [];
+
+            let levelObj = levelsData[currentLevelIndex];
+            currentQuestion = levelObj.questions[currentQInLevel];
+            document.getElementById('question-text').innerText = currentQuestion.q;
+            document.getElementById('level-val').innerText = (currentLevelIndex + 1);
+
+            let numOptions = currentQuestion.options.length;
+            let positions = laneSpans[numOptions];
+
+            let indices = Array.from({length: numOptions}, (_, i) => i);
+
+            for (let i = 0; i < numOptions; i++) {
+                let isGoldenFinal = (currentLevelIndex === 5 && i === currentQuestion.correct);
+                let mesh = createLilyPadMesh(isGoldenFinal);
+                let xPos = positions[i];
+                mesh.position.set(xPos, 0, -4);
+                scene.add(mesh);
+
+                lilyPads.push({
+                    mesh: mesh,
+                    lane: i,
+                    optionIndex: indices[i],
+                    text: currentQuestion.options[indices[i]]
+                });
+            }
+            selectedLane = Math.floor(numOptions / 2);
+            targetLane = selectedLane;
+            frogGroup.position.x = positions[selectedLane];
+            createLabels(numOptions);
+            updateOptionLabels();
+        }
+
+        const labelContainer = document.createElement('div');
+        labelContainer.style.position = 'absolute';
+        labelContainer.style.top = '0';
+        labelContainer.style.left = '0';
+        labelContainer.style.width = '100%';
+        labelContainer.style.height = '100%';
+        labelContainer.style.pointerEvents = 'none';
+        document.body.appendChild(labelContainer);
+
+        let optionLabels = [];
+        function createLabels(num) {
+            optionLabels.forEach(l => l.remove());
+            optionLabels = [];
+            for (let i = 0; i < num; i++) {
+                const div = document.createElement('div');
+                div.style.position = 'absolute';
+                div.style.background = 'rgba(255, 255, 255, 0.96)';
+                div.style.padding = '10px 14px';
+                div.style.borderRadius = '14px';
+                div.style.fontWeight = 'bold';
+                div.style.color = '#0f172a';
+                div.style.boxShadow = '0 6px 18px rgba(0,0,0,0.22)';
+                div.style.border = '2.5px solid #74B72E';
+                div.style.transform = 'translate(-50%, -50%)';
+                div.style.fontSize = '0.95rem';
+                div.style.textAlign = 'center';
+                div.style.whiteSpace = 'pre-line';
+                div.style.maxWidth = '200px';
+                labelContainer.appendChild(div);
+                optionLabels.push(div);
+            }
+        }
+
+        function updateOptionLabels() {
+            lilyPads.forEach((pad, idx) => {
+                optionLabels[idx].innerText = pad.text;
+            });
+        }
+
+        function project3DTo2D(vector, camera) {
+            let v = vector.clone();
+            v.project(camera);
+            let x = (v.x *  .5 + .5) * window.innerWidth;
+            let y = (v.y * -.5 + .5) * window.innerHeight;
+            return { x, y };
+        }
+
+        function updateLabelsPosition() {
+            lilyPads.forEach((pad, idx) => {
+                let pos3d = pad.mesh.position.clone();
+                pos3d.y += 0.35;
+                let coords = project3DTo2D(pos3d, camera);
+                optionLabels[idx].style.left = `${coords.x}px`;
+                optionLabels[idx].style.top = `${coords.y}px`;
+            });
+        }
+
+        // --- CONTROLES ---
+        let isJumping = false;
+        let jumpProgress = 0;
+        let targetLane = 1;
+        let audioCtx = null;
+        function sfx(kind){
+            try{
+                audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+                const osc=audioCtx.createOscillator(), gain=audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                const now=audioCtx.currentTime;
+                const seq=kind==='good'?[523,659,784]:kind==='bad'?[220,165]:[420,620];
+                osc.type=kind==='bad'?'triangle':'sine'; osc.frequency.setValueAtTime(seq[0],now);
+                if(seq.length>1)osc.frequency.exponentialRampToValueAtTime(seq[seq.length-1],now+.13);
+                gain.gain.setValueAtTime(.0001,now); gain.gain.exponentialRampToValueAtTime(.12,now+.02); gain.gain.exponentialRampToValueAtTime(.0001,now+.22);
+                osc.start(now); osc.stop(now+.23);
+            }catch(e){}
+        }
+        let toastTimer;
+        function toast(message,kind='good'){
+            const el=document.getElementById('game-toast'); el.textContent=message;
+            el.style.borderColor=kind==='bad'?'#ff9e9e':'#d8ff67';
+            el.classList.add('show'); clearTimeout(toastTimer);
+            toastTimer=setTimeout(()=>el.classList.remove('show'),850);
+        }
+        function moveLane(delta){
+            if(!gameActive)return;
+            targetLane=Math.max(0,Math.min(lilyPads.length-1,targetLane+delta));
+            sfx('move');
+        }
+        function jump(){
+            if(!gameActive || isJumping)return;
+            isJumping=true; jumpProgress=0; sfx('jump');
+        }
+        document.getElementById('left-touch').addEventListener('pointerdown',()=>moveLane(-1));
+        document.getElementById('right-touch').addEventListener('pointerdown',()=>moveLane(1));
+        document.getElementById('jump-touch').addEventListener('pointerdown',jump);
+        document.querySelectorAll('.touch-btn').forEach(b=>b.addEventListener('contextmenu',e=>e.preventDefault()));
+
+        window.addEventListener('keydown', (e) => {
+            if (!gameActive) return;
+            let maxLane = lilyPads.length - 1;
+            if(['ArrowLeft','ArrowRight','ArrowUp',' '].includes(e.key))e.preventDefault();
+            if ((e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') && targetLane > 0) moveLane(-1);
+            if ((e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') && targetLane < maxLane) moveLane(1);
+            if (e.key === 'ArrowUp' || e.key === ' ') jump();
+        });
+
+        // --- BUCLE DE ANIMACIÓN ---
+        let clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            let elapsedTime = clock.getElapsedTime();
+
+            const positionAttribute = waterGeometry.attributes.position;
+            for (let i = 0; i < positionAttribute.count; i++) {
+                let u = positionAttribute.getX(i);
+                let v = positionAttribute.getY(i);
+                let z = Math.sin(u * 0.4 + elapsedTime * 2) * Math.cos(v * 0.4 + elapsedTime * 2) * 0.09;
+                positionAttribute.setZ(i, z);
+            }
+            positionAttribute.needsUpdate = true;
+
+            frogGroup.position.y = gameActive && !isJumping ? 0.025*Math.sin(elapsedTime*4) : frogGroup.position.y;
+            lilyPads.forEach((p,i)=>{p.mesh.position.y=0.015*Math.sin(elapsedTime*1.8+i*.7);p.mesh.rotation.y=.025*Math.sin(elapsedTime+i);});
+            if (gameActive) {
+                let numOptions = lilyPads.length;
+                let currentLanes = laneSpans[numOptions];
+                if (targetLane >= currentLanes.length) targetLane = currentLanes.length - 1;
+
+                let targetX = currentLanes[targetLane];
+                frogGroup.position.x += (targetX - frogGroup.position.x) * 0.2;
+
+                if (isJumping) {
+                    jumpProgress += 0.05;
+                    frogGroup.position.y = Math.sin(jumpProgress * Math.PI) * 1.8;
+                    frogGroup.rotation.x = Math.sin(jumpProgress * Math.PI) * 0.3;
+
+                    if (jumpProgress >= 1) {
+                        isJumping = false;
+                        frogGroup.position.y = 0;
+                        frogGroup.rotation.x = 0;
+
+                        let chosenPad = lilyPads[targetLane];
+                        if (chosenPad.optionIndex === currentQuestion.correct) {
+                            sfx("good"); toast("¡BRILLANTE! +5 PTS ✨","good");
+                            score += 5;
+                            document.getElementById('score-val').innerText = score;
+
+                            currentQInLevel++;
+                            let levelObj = levelsData[currentLevelIndex];
+
+                            if (currentQInLevel >= levelObj.questions.length) {
+                                gameActive = false;
+                                optionLabels.forEach(l => l.style.display = 'none');
+                                
+                                if (currentLevelIndex >= levelsData.length - 1) {
+                                    document.getElementById('victory-score').innerText = score;
+                                    document.getElementById('victory-screen').classList.remove('hidden');
+                                } else {
+                                    document.getElementById('level-title').innerText = levelObj.name;
+                                    document.getElementById('level-msg').innerText = levelObj.msg;
+                                    document.getElementById('level-screen').classList.remove('hidden');
+                                }
+                            } else {
+                                setupLevel();
+                            }
+                        } else {
+                            sfx("bad"); toast("¡PLAF! Era otra hoja 💦","bad");
+                            lives--;
+                            updateLivesDisplay();
+                            if (lives <= 0) {
+                                gameOver();
+                            } else {
+                                targetLane = Math.floor(lilyPads.length / 2);
+                                setupLevel();
+                            }
+                        }
+                    }
+                }
+                updateLabelsPosition();
+            }
+            renderer.render(scene, camera);
+        }
+
+        function updateLivesDisplay() {
+            let heartsStr = '';
+            for (let i = 0; i < lives; i++) heartsStr += '❤️';
+            for (let i = lives; i < 3; i++) heartsStr += '🖤';
+            document.getElementById('lives-val').innerText = heartsStr;
+        }
+
+        function startGame() {
+            document.getElementById('start-screen').classList.add('hidden');
+            score = 0;
+            lives = 3;
+            currentLevelIndex = 0;
+            currentQInLevel = 0;
+            document.getElementById('score-val').innerText = score;
+            updateLivesDisplay();
+            gameActive = true;
+            setupLevel();
+        }
+
+        function nextLevel() {
+            currentLevelIndex++;
+            currentQInLevel = 0;
+            document.getElementById('level-screen').classList.add('hidden');
+            optionLabels.forEach(l => l.style.display = 'block');
+            gameActive = true;
+            setupLevel();
+        }
+
+        function gameOver() {
+            gameActive = false;
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('gameover-screen').classList.remove('hidden');
+            optionLabels.forEach(l => l.style.display = 'none');
+        }
+
+        function restartGame() {
+            document.getElementById('gameover-screen').classList.add('hidden');
+            document.getElementById('victory-screen').classList.add('hidden');
+            optionLabels.forEach(l => l.style.display = 'block');
+            startGame();
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        });
+
+        animate();
+    </script>
+</body>
+</html>
